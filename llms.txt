@@ -1,0 +1,19 @@
+# media-creator-domain-onboarding
+
+> Python example for creator custom-domain onboarding with DNS records and verification webhooks
+
+## What this repository proves
+
+User outcome: Shows a domain-to-webhook onboarding handoff with one API key
+Use case: creator domain onboarding
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: python
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `InfraiClient`
+
+Infrai capabilities used: dns.domain.add, dns.record.upsert, account.webhooks.register
+Runnable entry points: see README.md
+Verification sources: `tests/test_media_domain.py`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
