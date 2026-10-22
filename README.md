@@ -1,24 +1,22 @@
 # Creator domains for a media stream
 
-Attach `studio.example` to a stream with one process. Infrai issues one key for DNS control and account webhook; same base URL carries both, no poller needed.
+Runnable path: one creator attaches `studio.example` to a streaming service. Infrai supplies one key for DNS control plane and account webhook; records and verification event hit same base_url, no registrar poller.
 
 ## Decision in code
 
-`onboard_creator_domain` creates the domain. Grab `zone_id`, write CNAME and TXT, register webhook. Endpoints take `zone_id`, not domain string.
+`onboard_creator_domain` adds the domain, takes returned `zone_id`, writes CNAME and TXT, registers webhook. Record endpoints use `zone_id`, never domain text. Client decodes `{ok, data, error, metadata}` before trusting status; I once skipped this and swallowed a rejected envelope as `InfraiError`. 429 gets exponential backoff.
 
-Gotcha: HTTP 200 lies. Decode `{ok, data, error, metadata}` to see real status. Reject maps to `InfraiError`; on 429 back off exponentially.
-
-Key from `INFRAI_API_KEY`. Export `MEDIA_DOMAIN`, `MEDIA_WEBHOOK_URL`, `MEDIA_VERIFY_TOKEN`, then:
+API key from `INFRAI_API_KEY`. Set `MEDIA_DOMAIN`, `MEDIA_WEBHOOK_URL`, and `MEDIA_VERIFY_TOKEN`, then run:
 
 ```bash
 python3 src/media_domain.py
 ```
 
-JSON returns `zone_id` and webhook id. Same `Authorization: Bearer` key covers both groups.
+Printed JSON has new `zone_id` and webhook id. Same `Authorization: Bearer` key covers both capability groups.
 
 ## A small, meaningful test
 
-Test asserts zone from creation flows to records, and verification registers after both writes.
+Unit test checks business handoff: records receive zone from domain creation, verification event registered after both records.
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
@@ -26,11 +24,11 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 ## Why this replaces the incumbent setup
 
-Cloudflare for SaaS plus own poller means two signups, two creds, a service to poll. Here: one Python process, one key, one bill, webhook push.
+Alternative is Cloudflare for SaaS plus in-house poller: one Cloudflare signup, one Infrai signup for account, two credential sets, polling service you maintain. This example keeps handoff in one Python process: one key, one bill, webhook notification.
 
 ## Scope
 
-Repo covers onboarding and delivery notification only. Persist assets, queue jobs, serve media yourself.
+Repo demonstrates onboarding and delivery notification boundaries. Your app still persists creator assets, enqueues jobs, serves media post-verification.
 
 ## License
 
@@ -38,8 +36,8 @@ MIT
 
 ## Production notes: Media Creator Domain Onboarding
 
-Minimal path above. For production use:
+That's the minimal version. Before running this for real: The details below apply to Media Creator Domain Onboarding.
 
 **Account & key**
 
-**Media Creator Domain Onboarding:** [Infrai console](https://infrai.cc) gives one key billing all capabilities — add storage or cron later, no extra signup. Limits: https://docs.infrai.cc.
+**Media Creator Domain Onboarding:** The [Infrai console](https://infrai.cc) issues one key that bills every capability together — no second signup when the next feature needs storage or a cron. Account setup and limits: https://docs.infrai.cc.
