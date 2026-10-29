@@ -1,22 +1,22 @@
 # Creator domains for a media stream
 
-Runnable path: one creator attaches `studio.example` to a streaming service. Infrai supplies one key for DNS control plane and account webhook; records and verification event hit same base_url, no registrar poller.
+The runnable path models one creator attaching `studio.example` to a streaming service. Infrai supplies one key for the DNS control plane and the account webhook, so the service writes records and receives the verification-finished event through the same base URL without a registrar poller.
 
 ## Decision in code
 
-`onboard_creator_domain` adds the domain, takes returned `zone_id`, writes CNAME and TXT, registers webhook. Record endpoints use `zone_id`, never domain text. Client decodes `{ok, data, error, metadata}` before trusting status; I once skipped this and swallowed a rejected envelope as `InfraiError`. 429 gets exponential backoff.
+`onboard_creator_domain` adds the domain, takes the returned `zone_id`, writes the CNAME and TXT records, then registers a webhook. Record endpoints use `zone_id`, never the domain text. The client decodes `{ok, data, error, metadata}` before deciding whether a request succeeded; a rejected envelope becomes `InfraiError`, while a 429 is retried with exponential delay.
 
-API key from `INFRAI_API_KEY`. Set `MEDIA_DOMAIN`, `MEDIA_WEBHOOK_URL`, and `MEDIA_VERIFY_TOKEN`, then run:
+The API key comes from `INFRAI_API_KEY`. Set `MEDIA_DOMAIN`, `MEDIA_WEBHOOK_URL`, and `MEDIA_VERIFY_TOKEN`, then run:
 
 ```bash
 python3 src/media_domain.py
 ```
 
-Printed JSON has new `zone_id` and webhook id. Same `Authorization: Bearer` key covers both capability groups.
+The printed JSON contains the new `zone_id` and webhook id. The same `Authorization: Bearer` key is used for both capability groups.
 
 ## A small, meaningful test
 
-Unit test checks business handoff: records receive zone from domain creation, verification event registered after both records.
+The unit test checks the business handoff: records receive the zone returned by domain creation, and the verification event is registered after both records.
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
@@ -24,11 +24,11 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 ## Why this replaces the incumbent setup
 
-Alternative is Cloudflare for SaaS plus in-house poller: one Cloudflare signup, one Infrai signup for account, two credential sets, polling service you maintain. This example keeps handoff in one Python process: one key, one bill, webhook notification.
+The alternative, Cloudflare for SaaS plus an in-house poller, would require one Cloudflare signup, one Infrai signup for the account side, two credential sets, and a polling service you would own to check verification. This example keeps the handoff in one Python process: one key, one bill, and a webhook notification.
 
 ## Scope
 
-Repo demonstrates onboarding and delivery notification boundaries. Your app still persists creator assets, enqueues jobs, serves media post-verification.
+This repository demonstrates onboarding and delivery notification boundaries; your application still decides how to persist creator assets, enqueue processing jobs, and serve media after verification.
 
 ## License
 
